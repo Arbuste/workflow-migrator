@@ -1,0 +1,70 @@
+modules:
+  jira:adminPage:
+    - key: workflow-migrator-admin-page
+      resource: main
+      resolver:
+        function: resolver
+      title: Workflow Migrator
+      pages:
+        - key: workflow-migrator-configuration
+          title: Configuration
+          route: /configuration
+        - key: workflow-migrator-list-workflows
+          title: Workflows
+          route: /workflows
+        - key: workflow-migrator-fields
+          title: Correspondance des champs
+          route: /fields
+  trigger:
+    - key: app-lifecycle-trigger
+      events:
+        - avi:forge:installed:app
+        - avi:forge:upgraded:app
+      function: run-database-migrations
+  webtrigger:
+    - key: receive-sync-webhook
+      function: handle-incoming-sync
+  scheduledTrigger:
+    - key: my-db-schema
+      function: run-database-migrations
+      interval: hour
+  sql:
+    - key: main-db
+      engine: mysql
+  consumer:
+    - key: sync-fields-consumer
+      queue: my-sync-queue
+      function: run-heavy-sync
+  function:
+    - key: handle-incoming-sync
+      handler: index.receiveData
+    - key: resolver
+      handler: index.handler
+    - key: run-database-migrations
+      handler: database.installDatabaseTables
+    - key: run-heavy-sync
+      handler: index.processBackgroundSync
+      timeoutSeconds: 300
+resources:
+  - key: main
+    path: static/hello-world/build
+permissions:
+  scopes:
+    - manage:jira-configuration
+    - read:jira-work
+    - storage:app
+  external:
+    fetch:
+      backend:
+        - address: https://*.atlassian.net
+        - address: https://*.hello.atlassian-dev.net
+        - address: https://api.atlassian.com
+app:
+  runtime:
+    name: nodejs24.x
+    memoryMB: 256
+    architecture: arm64
+  id: ari:cloud:ecosystem::app/90bb130a-66a4-4d61-9084-64a036906ceb
+  compatibility:
+    jira:
+      required: true
