@@ -72,9 +72,9 @@ Use the `--verbose` command to troubleshoot a failing command.
 
 # Deployments
 
-Use the existing `Deploy.ps1` PowerShell script for this app's build/deployment workflow instead of manually chaining npm and Forge commands. Only deploy when the user has authorized it. Default to `development`; never deploy to staging or production without an explicit request.
+Use the repository's deployment script for this app's build/deployment workflow instead of manually chaining npm and Forge commands. Select the script that matches the host environment: `Deploy.ps1` on Windows PowerShell/PowerShell, or `Deploy.sh` on Linux and macOS with Bash. Only deploy when the user has authorized it. Default to `development`; never deploy to staging or production without an explicit request.
 
-From the app root:
+From the app root on Windows:
 
 ```powershell
 .\Deploy.ps1 -DryRun                 # Read-only decision: no tests, build, cache write or deployment
@@ -86,17 +86,28 @@ From the app root:
 .\Deploy.Tests.ps1                   # Script regression tests with simulated npm/Forge commands
 ```
 
-The script uses `$PSScriptRoot`, changes to the app root, checks `manifest.yml`, and prints `pwd` before invoking Forge. It currently targets Windows PowerShell/PowerShell on Windows (`npm.cmd`, `forge.cmd`). Prerequisites: Node.js, npm, installed root/frontend dependencies, and an authenticated Forge CLI for real deployment. It does not install dependencies automatically; on a fresh clone, run `npm.cmd ci` at the app root and `npm.cmd --prefix static/hello-world ci` before building.
+From the app root on Linux or macOS:
+
+```bash
+./Deploy.sh --dry-run                       # Read-only decision; no side effects
+./Deploy.sh --build-only                    # Test/build only when necessary
+./Deploy.sh                                 # Conditional preparation, then deploy to development
+./Deploy.sh --force-build                   # Force tests/build, then deploy to development
+./Deploy.sh --force-build --build-only      # Force tests/build without deploying
+./Deploy.sh --environment staging           # Only if explicitly requested
+```
+
+Both scripts resolve and enter the app root, check `manifest.yml`, and print `pwd` before invoking Forge. `Deploy.ps1` uses the Windows commands `npm.cmd` and `forge.cmd`; `Deploy.sh` uses the Unix commands `npm` and `forge`. Prerequisites are Node.js, npm, installed root/frontend dependencies, and an authenticated Forge CLI for real deployment. The scripts do not install dependencies automatically. On a fresh Windows clone, run `npm.cmd ci` and `npm.cmd --prefix static/hello-world ci`; on Linux/macOS, run `npm ci` and `npm --prefix static/hello-world ci`.
 
 `Get-TreeFingerprint` hashes relative file paths and file contents with SHA-256, sorts entries ordinally, and hashes the combined entries. Frontend inputs include hidden files, package manifests/lockfile, Node.js version, and selected build environment variables (including `REACT_APP_*`). The frontend scan excludes directories named `node_modules`, `build`, `coverage`, `.git`, and `.forge`; links/reparse points are rejected. A separate fingerprint verifies generated build files.
 
 The local state is `.forge/frontend-build-state.json` (ignored by Git). A rebuild is required if forced, `build/index.html` is missing, the state is absent/unreadable, frontend inputs changed, or generated output changed. Backend-only changes do not require a frontend rebuild when both fingerprints still match. Do NOT replace this logic with `git diff`: committed frontend changes can still require rebuilding. The first script run rebuilds even when an older build is present, because it has no trusted fingerprint yet.
 
-When rebuilding, the script invalidates the old marker, runs frontend tests with `CI=true` and `--watchAll=false --runInBand`, then runs `npm run build`. It verifies sources did not change during the build and only saves fingerprints after success. Failures stop before deployment. `CI` and the working directory are restored in `finally`. `BUILD_PATH` overrides are rejected because the manifest expects `static/hello-world/build`.
+When rebuilding, both scripts invalidate the old marker, run frontend tests with `CI=true` and `--watchAll=false --runInBand`, then run `npm run build`. They verify sources did not change during the build and only save fingerprints after success. Failures stop before deployment. `CI` and the working directory are restored on exit. `BUILD_PATH` overrides are rejected because the manifest expects `static/hello-world/build`.
 
 Deployment uses `forge deploy --non-interactive --environment <name>`, retaining Forge's default lint/verification; a separate lint immediately before deployment is normally redundant. Run standalone `forge lint` when validating manifest changes without deploying. NEVER use `--no-verify` unless the user explicitly requests it. The previously documented `--e` option is invalid for the installed CLI; use `--environment`.
 
-The script does not commit, push, install or upgrade Jira installations, or manage Forge variables. Scope/egress changes may still require a separately authorized installation upgrade after deployment. Never claim success until the command has completed successfully. Prefer one script invocation and its final result over repeatedly polling each build stage.
+Neither script commits, pushes, installs or upgrades Jira installations, or manages Forge variables. Scope/egress changes may still require a separately authorized installation upgrade after deployment. Never claim success until the command has completed successfully. Prefer one script invocation and its final result over repeatedly polling each build stage.
 
 Keep `node_modules/`, `static/hello-world/build/`, and `.forge/` untracked. Keep source files, deployment scripts/tests, `manifest.yml`, `package.json` and `package-lock.json` tracked. The fingerprints are a local build-reuse optimization, not a security signature or proof of fully reproducible dependencies; use `-ForceBuild` after manually altering installed dependencies or build tooling not represented in the inputs.
 
