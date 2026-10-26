@@ -24,7 +24,7 @@ export async function getActiveConnection() {
     try {
         const activeSiteName = await kvs.get('active-connection');
         if (!activeSiteName) {
-            return null; // Aucune connexion active
+            return null;
         }
         const activeConnectionUrl = await kvs.get(activeSiteName);
         return activeConnectionUrl;

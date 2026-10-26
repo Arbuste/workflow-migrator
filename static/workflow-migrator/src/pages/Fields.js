@@ -28,7 +28,7 @@ function ListFields() {
             try {
                 const connection = await invoke('getActiveConnection');
                 
-                // On applique la sécurité contre l'objet vide {} qu'on a vue ensemble !
+                // Une réponse vide ne contient aucune connexion active.
                 if (connection && Object.keys(connection).length > 0) {
                     setActiveConnection(connection);
                 } else {
@@ -37,14 +37,14 @@ function ListFields() {
             } catch (error) {
                 console.error("Erreur lors de la récupération de la connexion :", error);
             } finally {
-                setLoading(false); // Le chargement est terminé, quoi qu'il arrive
+                setLoading(false);
             }
         }
 
         fetchConnection();
     }, []);
 
-    // On récupère directement la connexion active depuis le contexte de l'application
+    // Recharge les champs dès qu'une connexion devient active.
     const handleSyncClick = async () => {
         setError(null);
         setSuccess(null);
@@ -59,12 +59,12 @@ function ListFields() {
         try {
             const response = await invoke('startSync', { type: 'fields' });
             if (response.status === 'started') {
-                // 2. On crée un minuteur pour vérifier l'état régulièrement
+                // Vérifie périodiquement la fin de la synchronisation.
                 const intervalId = setInterval(async () => {
                     const currentStatus = await invoke('checkSyncStatus', { type: 'fields' });
                     console.log(currentStatus);
                     if (currentStatus.status === 'completed') {
-                        clearInterval(intervalId); // On arrête le minuteur
+                        clearInterval(intervalId);
                         setStatus('completed');
                         setSuccess("Synchronisation des champs réussie !");
                         const fields = await invoke('getFields');
@@ -77,7 +77,7 @@ function ListFields() {
                         setError(currentStatus.error || "Erreur inconnue pendant la synchronisation.");
                         setLoading(false);
                     }
-                }, 3000); // Vérification toutes les 3 secondes
+                }, 3000);
             } else {
                 console.log(response.status)
                 setError("Le serveur n'a pas pu démarrer la tâche.");
@@ -95,13 +95,10 @@ function ListFields() {
             return;
         }
 
-        // A. Création de l'en-tête du fichier CSV
+        // Construit un CSV compatible avec les noms de champs contenant des virgules.
         let csvContent = "Nom du champ,Type du champ,ID Source,ID Target\n";
 
-        // B. Boucle sur les données pour créer les lignes
         allFields.forEach(field => {
-            // On met le nom entre guillemets pour éviter que d'éventuelles virgules 
-            // dans le nom du champ ne cassent les colonnes du CSV.
             const safeName = field.name ? `"${field.name.replace(/"/g, '""')}"` : "";
             const type = field.type || "";
             const idSource = field.idSource || "";
@@ -110,18 +107,17 @@ function ListFields() {
             csvContent += `${safeName},${type},${idSource},${idTarget}\n`;
         });
 
-        // C. La magie du navigateur : créer un fichier virtuel et le télécharger
+        // Télécharge le contenu via une URL temporaire, puis libère cette URL.
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', 'mapping_champs.csv'); // Nom du fichier
+        link.setAttribute('download', 'mapping_champs.csv');
         document.body.appendChild(link);
         
-        link.click(); // Simule le clic de l'utilisateur
+        link.click();
         
-        // D. Nettoyage
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
     };
@@ -161,7 +157,7 @@ function ListFields() {
                 type="button" 
                 onClick={handleExportCSV} 
                 disabled={allFields.length === 0}
-                style={{ marginLeft: '10px' }} // Petit espacement si besoin
+                style={{ marginLeft: '10px' }}
             >
                 📥 Exporter en CSV
             </button>

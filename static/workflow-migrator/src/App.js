@@ -5,10 +5,8 @@ import Configuration from "./pages/Configuration";
 import ListWorkflows from "./pages/ListWorkflows";
 import Fields from "./pages/Fields";
 
-// 1. Création du Contexte (exporté pour être accessible ailleurs si besoin)
 export const AppContext = createContext(null);
 
-// 2. Un hook personnalisé exporté pour faciliter l'utilisation dans vos pages
 export function useAppConfig() {
   return useContext(AppContext);
 }
@@ -35,7 +33,7 @@ function App() {
 
   useEffect(() => {
     (async () => {
-      // 1. Initialisation de l'historique Forge pour la navigation
+      // Synchronise le routeur avec l'historique de la page d'administration.
       const history = await view.createHistory();
       setNavigator(history);
 
@@ -73,7 +71,6 @@ function App() {
   }
 
   return (
-    /* 3. On enveloppe TOUTE l'application (incluant le Router et les Routes) avec le Provider */
     <AppContext.Provider>
       <div>
         <Router

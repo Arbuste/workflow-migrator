@@ -47,7 +47,7 @@ modules:
       timeoutSeconds: 300
 resources:
   - key: main
-    path: static/hello-world/build
+    path: static/workflow-migrator/build
 permissions:
   scopes:
     - manage:jira-configuration
