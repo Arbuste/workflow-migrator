@@ -72,6 +72,16 @@ test("shows generated URL as link-styled text without a button or navigation", a
   expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
 });
 
+test("shows a copy icon that also copies the URL when clicked", async () => {
+  await generateUrl();
+  const icon = copyText().querySelector("svg");
+  expect(icon).not.toBeNull();
+  expect(icon.getAttribute("aria-hidden")).toBe("true");
+  expect(icon.getAttribute("focusable")).toBe("false");
+  await click(icon);
+  expect(navigator.clipboard.writeText).toHaveBeenCalledWith(generatedUrl);
+});
+
 test("copies the exact generated URL and announces success", async () => {
   await generateUrl();
   await click(copyText());

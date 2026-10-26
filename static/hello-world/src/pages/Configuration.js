@@ -181,6 +181,22 @@ function Configuration() {
               }}
             >
               {webTriggerUrl}
+              <svg
+                aria-hidden="true"
+                focusable="false"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ marginLeft: "0.375rem", verticalAlign: "middle", userSelect: "none" }}
+              >
+                <rect x="9" y="9" width="11" height="12" rx="2" />
+                <path d="M15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4" />
+              </svg>
             </span>
           </div>
           {copyFeedback && (
