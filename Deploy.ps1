@@ -23,7 +23,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$frontend = Join-Path $PSScriptRoot 'static/hello-world'
+$frontend = Join-Path $PSScriptRoot 'static/workflow-migrator'
 $build = Join-Path $frontend 'build'
 $statePath = Join-Path $PSScriptRoot '.forge/frontend-build-state.json'
 
@@ -97,7 +97,7 @@ try {
         )
     } | ForEach-Object { "$($_.Name)=$($_.Value)" })
     if ($env:BUILD_PATH) {
-        throw 'BUILD_PATH must be unset: manifest.yml expects static/hello-world/build.'
+        throw 'BUILD_PATH must be unset: manifest.yml expects static/workflow-migrator/build.'
     }
     $sourceHash = Get-TreeFingerprint -Root $frontend -ExcludedDirectories @('node_modules', 'build', 'coverage', '.git', '.forge') -ExtraInputs $inputs
     $state = $null

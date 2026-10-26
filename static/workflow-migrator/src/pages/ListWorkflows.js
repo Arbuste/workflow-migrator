@@ -86,7 +86,7 @@ function ListWorkflows() {
       try {
           const connection = await invoke('getActiveConnection');
           
-          // On applique la sécurité contre l'objet vide {} qu'on a vue ensemble !
+          // Une réponse vide ne contient aucune connexion active.
           if (connection && Object.keys(connection).length > 0) {
               setActiveConnection(connection);
           } else {
@@ -122,12 +122,12 @@ function ListWorkflows() {
     try {
         const response = await invoke('startSync', { type: 'workflows' });
         if (response.status === 'started') {
-            // 2. On crée un minuteur pour vérifier l'état régulièrement
+            // Vérifie périodiquement la fin de la synchronisation.
             const intervalId = setInterval(async () => {
                 const currentStatus = await invoke('checkSyncStatus', { type: 'workflows' });
                 console.log(currentStatus);
                 if (currentStatus.status === 'completed') {
-                    clearInterval(intervalId); // On arrête le minuteur
+                    clearInterval(intervalId);
                     setStatus('completed');
                     setSuccess("Synchronisation des workflows réussie !");
                     const workflows = await invoke('getWorkflows');
@@ -140,7 +140,7 @@ function ListWorkflows() {
                     setError(currentStatus.error || "Erreur inconnue pendant la synchronisation.");
                     setLoading(false);
                 }
-            }, 3000); // Vérification toutes les 3 secondes
+            }, 3000);
         } else {
             console.log(response.status)
             setError("Le serveur n'a pas pu démarrer la tâche.");

@@ -14,10 +14,8 @@ export async function searchFields() {
 
 export async function receiveData(request) {
   try {
-    // 1. Récupération des composants de la requête HTTP
     const { method, headers, queryParameters, body } = request;
     console.log(request);
-    // 2. Exemple de lecture des Query Parameters (?resource=workflow&id=123)
     if (!('resourceType' in queryParameters)) {
         return { statusCode: 400, body: JSON.stringify({ error: "Aucune ressource ciblée." }) };
     }
@@ -26,7 +24,6 @@ export async function receiveData(request) {
 
     if (resourceType === 'workflow') {
         if (method === 'GET') {
-            //return searchWorkflows(resourceIds);
         } else if (method === 'POST') {
             const data = body ? JSON.parse(body) : {};
             if (!data && !resourceId) {
@@ -43,7 +40,6 @@ export async function receiveData(request) {
     }
 
     if (method === 'POST' && resourceType === 'workflow') {
-      // Logique pour CREER/MIGRER un workflow avec l'id 'resourceId'
       console.log(`Migration du workflow ${resourceId} initiée.`);
     }
 

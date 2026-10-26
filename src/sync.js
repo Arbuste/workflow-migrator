@@ -20,7 +20,7 @@ export async function syncWorkflows() {
         let hasMoreOnApi = true;
         const pageSize = 20;
 
-        // Fetch ALL workflows from the API
+        // Parcourt toutes les pages avant d'enregistrer les workflows compatibles.
         while (hasMoreOnApi) {
             const startAt = apiPage * pageSize;
             console.log(`Fetching API page ${apiPage}, startAt=${startAt}`);
@@ -46,7 +46,7 @@ export async function syncWorkflows() {
 
         console.log(`Total filtered workflows: ${allFilteredWorkflows.length}`);
 
-        // Enrich all with project usages
+        // Ajoute les projets qui utilisent chaque workflow.
         const workflowsWithUsage = await Promise.all(
             allFilteredWorkflows.map(async (workflow) => {
                 const projectUsageResponse = await api.asApp().requestJira(
@@ -155,7 +155,7 @@ export async function syncFieldsFromDistantSite() {
     }
 }
 
-// 1. Le déclencheur rapide appelé par le Front-end
+// Démarre la synchronisation en file d'attente sans bloquer l'interface.
 export async function startSyncHandler({ payload }) {
     const { type } = payload;
     console.log("start sync", type);
@@ -164,7 +164,7 @@ export async function startSyncHandler({ payload }) {
     return { status: 'started' };
 }
 
-// 2. Le point de contrôle que le Front-end va interroger régulièrement
+// Retourne l'état courant utilisé par le suivi périodique de l'interface.
 export async function checkSyncStatusHandler({ payload }) {
     console.log(payload);
     const { type } = payload;
@@ -173,7 +173,7 @@ export async function checkSyncStatusHandler({ payload }) {
     return { status: status || 'idle' };
 }
 
-// 3. LE TRAVAILLEUR DE L'OMBRE (Le Consumer)
+// Traite le type de synchronisation demandé par la file d'attente.
 export async function processBackgroundSync(event) {
     const type = event.body?.type;
     try {
@@ -182,7 +182,6 @@ export async function processBackgroundSync(event) {
         } else if (type === 'workflows') {
             await syncWorkflows();
         }
-        // À la toute fin, quand tout est réussi :
         await kvs.set(`sync_status_${type}`, 'completed');
     } catch (error) {
         console.error("Échec de la synchro en arrière-plan", error);

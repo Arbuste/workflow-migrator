@@ -1,47 +1,25 @@
-# Forge Hello World
+# Workflow Migrator
 
-This project contains a Forge app written in Javascript that displays `Hello World!` in a Jira admin page. 
+Workflow Migrator synchronise les workflows et les champs personnalisés entre deux sites Jira.
 
-See [developer.atlassian.com/platform/forge/](https://developer.atlassian.com/platform/forge) for documentation and tutorials explaining Forge.
+## Installation des dépendances
 
-## Requirements
-
-See [Set up Forge](https://developer.atlassian.com/platform/forge/set-up-forge/) for instructions to get set up.
-
-## Quick start
-- Install top-level dependencies:
-```
+```sh
 npm install
+npm --prefix static/workflow-migrator install
 ```
 
-- Install dependencies (inside of the `static/hello-world` directory):
-```
-npm install
-```
+## Tests et build du frontend
 
-- Modify your app by editing the files in `static/hello-world/src/`.
-
-- Build your app (inside of the `static/hello-world` directory):
-```
-npm run build
+```sh
+npm --prefix static/workflow-migrator test -- --watchAll=false --runInBand
+npm --prefix static/workflow-migrator run build
 ```
 
-- Deploy your app by running:
-```
-forge deploy
-```
+Sous Windows, le script de déploiement peut préparer le frontend sans effectuer de déploiement :
 
-- Install your app in an Atlassian site by running:
-```
-forge install
+```powershell
+.\Deploy.ps1 -BuildOnly
 ```
 
-### Notes
-- Use the `forge deploy` command when you want to persist code changes.
-- Use the `forge install` command when you want to install the app on a new site.
-- Once the app is installed on a site, the site picks up the new app changes you deploy without needing to rerun the install command.
-
-## Support
-
-See [Get help](https://developer.atlassian.com/platform/forge/get-help/) for how to get help and provide feedback.
-
+Consultez `Deploy.ps1 -?` pour les autres options de build et de déploiement.
