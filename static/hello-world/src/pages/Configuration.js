@@ -29,6 +29,9 @@ function Configuration() {
   }, []);
 
   const handleCopyUrl = async () => {
+    // Un texte cliquable n'a pas de désactivation native, contrairement au bouton.
+    if (isCopying || isLoading) return;
+
     setCopyFeedback(null);
     setIsCopying(true);
     try {
@@ -155,16 +158,30 @@ function Configuration() {
         <div style={{ marginTop: "1rem" }}>
           <strong>URL générée :</strong>
           <div>
-            <button
-              type="button"
+            <span
+              role="button"
+              tabIndex={0}
               onClick={handleCopyUrl}
-              disabled={isCopying || isLoading}
+              onKeyDown={(event) => {
+                // Le texte conserve une activation clavier sans ouvrir l'URL.
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  if (!event.repeat) handleCopyUrl();
+                }
+              }}
+              aria-disabled={isCopying || isLoading}
               aria-label="Copier l'URL générée dans le presse-papier"
               title="Cliquer pour copier l'URL"
-              style={{ overflowWrap: "anywhere", userSelect: "text" }}
+              style={{
+                color: "var(--ds-link, #0C66E4)",
+                textDecoration: "underline",
+                cursor: isCopying || isLoading ? "not-allowed" : "pointer",
+                overflowWrap: "anywhere",
+                userSelect: "text",
+              }}
             >
               {webTriggerUrl}
-            </button>
+            </span>
           </div>
           {copyFeedback && (
             <p role={copyFeedback.type === "error" ? "alert" : "status"}>

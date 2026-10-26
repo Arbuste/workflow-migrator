@@ -12,7 +12,7 @@ let container;
 let root;
 let originalClipboard;
 
-function copyButton() {
+function copyText() {
   return container.querySelector(`[aria-label="${copyLabel}"]`);
 }
 
@@ -60,48 +60,75 @@ afterEach(() => {
   delete global.IS_REACT_ACT_ENVIRONMENT;
 });
 
-test("only offers copying after URL generation, without opening a link", async () => {
-  expect(copyButton()).toBeNull();
+test("shows generated URL as link-styled text without a button or navigation", async () => {
+  expect(copyText()).toBeNull();
   await generateUrl();
-  expect(copyButton().textContent).toBe(generatedUrl);
-  expect(copyButton().getAttribute("type")).toBe("button");
+  expect(copyText().textContent).toBe(generatedUrl);
+  expect(copyText().tagName).toBe("SPAN");
+  expect(copyText().style.textDecoration).toBe("underline");
+  expect(copyText().getAttribute("role")).toBe("button");
+  expect(copyText().tabIndex).toBe(0);
   expect(container.querySelector("a")).toBeNull();
   expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
 });
 
 test("copies the exact generated URL and announces success", async () => {
   await generateUrl();
-  await click(copyButton());
+  await click(copyText());
   expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(1);
   expect(navigator.clipboard.writeText).toHaveBeenCalledWith(generatedUrl);
   expect(container.querySelector('[role="status"]').textContent)
     .toBe("URL copiée dans le presse-papier !");
-  expect(copyButton().disabled).toBe(false);
+  expect(copyText().getAttribute("aria-disabled")).toBe("false");
 });
 
-test("waits for the clipboard write before confirming success", async () => {
+test.each(["Enter", " "])("copies using the %s key", async (key) => {
+  await generateUrl();
+  const preventDefault = jest.fn();
+  await act(async () => {
+    Simulate.keyDown(copyText(), { key, preventDefault });
+  });
+  expect(preventDefault).toHaveBeenCalled();
+  expect(navigator.clipboard.writeText).toHaveBeenCalledWith(generatedUrl);
+});
+
+test("ignores unrelated keys and repeated keydown events", async () => {
+  await generateUrl();
+  await act(async () => {
+    Simulate.keyDown(copyText(), { key: "Escape" });
+    Simulate.keyDown(copyText(), { key: "Enter", repeat: true });
+  });
+  expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
+});
+
+test("waits for the clipboard write and prevents further activation while copying", async () => {
   let finishCopy;
   navigator.clipboard.writeText.mockImplementation(() => new Promise(resolve => {
     finishCopy = resolve;
   }));
   await generateUrl();
-  await click(copyButton());
-  expect(copyButton().disabled).toBe(true);
+  await click(copyText());
+  expect(copyText().getAttribute("aria-disabled")).toBe("true");
   expect(container.querySelector('[role="status"]')).toBeNull();
+  await click(copyText());
+  await act(async () => {
+    Simulate.keyDown(copyText(), { key: "Enter" });
+  });
+  expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(1);
   await act(async () => finishCopy());
-  expect(copyButton().disabled).toBe(false);
+  expect(copyText().getAttribute("aria-disabled")).toBe("false");
   expect(container.querySelector('[role="status"]')).not.toBeNull();
 });
 
 test("reports a clipboard refusal and allows retrying", async () => {
   navigator.clipboard.writeText.mockRejectedValueOnce(new Error("NotAllowedError"));
   await generateUrl();
-  await click(copyButton());
+  await click(copyText());
   expect(container.querySelector('[role="alert"]').textContent)
     .toContain("copier manuellement");
   expect(container.querySelector('[role="status"]')).toBeNull();
-  expect(copyButton().disabled).toBe(false);
-  await click(copyButton());
+  expect(copyText().getAttribute("aria-disabled")).toBe("false");
+  await click(copyText());
   expect(container.querySelector('[role="alert"]')).toBeNull();
   expect(container.querySelector('[role="status"]')).not.toBeNull();
 });
@@ -109,19 +136,19 @@ test("reports a clipboard refusal and allows retrying", async () => {
 test("handles browsers without the Clipboard API", async () => {
   delete navigator.clipboard;
   await generateUrl();
-  await click(copyButton());
+  await click(copyText());
   expect(container.querySelector('[role="alert"]').textContent)
     .toContain("Impossible de copier l'URL");
-  expect(copyButton().disabled).toBe(false);
+  expect(copyText().getAttribute("aria-disabled")).toBe("false");
 });
 
 test("clears old feedback and copies the new URL after regeneration", async () => {
   await generateUrl();
-  await click(copyButton());
+  await click(copyText());
   const nextUrl = "https://example.atlassian-dev.net/webtrigger/next";
   invoke.mockResolvedValueOnce(nextUrl);
   await generateUrl();
   expect(container.querySelector('[role="status"]')).toBeNull();
-  await click(copyButton());
+  await click(copyText());
   expect(navigator.clipboard.writeText).toHaveBeenLastCalledWith(nextUrl);
 });
