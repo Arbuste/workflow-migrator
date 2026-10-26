@@ -29,6 +29,9 @@ function Configuration() {
   }, []);
 
   const handleCopyUrl = async () => {
+    // Un texte cliquable n'a pas de désactivation native, contrairement au bouton.
+    if (isCopying || isLoading) return;
+
     setCopyFeedback(null);
     setIsCopying(true);
     try {
@@ -155,16 +158,46 @@ function Configuration() {
         <div style={{ marginTop: "1rem" }}>
           <strong>URL générée :</strong>
           <div>
-            <button
-              type="button"
+            <span
+              role="button"
+              tabIndex={0}
               onClick={handleCopyUrl}
-              disabled={isCopying || isLoading}
+              onKeyDown={(event) => {
+                // Le texte conserve une activation clavier sans ouvrir l'URL.
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  if (!event.repeat) handleCopyUrl();
+                }
+              }}
+              aria-disabled={isCopying || isLoading}
               aria-label="Copier l'URL générée dans le presse-papier"
               title="Cliquer pour copier l'URL"
-              style={{ overflowWrap: "anywhere", userSelect: "text" }}
+              style={{
+                color: "var(--ds-link, #0C66E4)",
+                textDecoration: "underline",
+                cursor: isCopying || isLoading ? "not-allowed" : "pointer",
+                overflowWrap: "anywhere",
+                userSelect: "text",
+              }}
             >
               {webTriggerUrl}
-            </button>
+              <svg
+                aria-hidden="true"
+                focusable="false"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ marginLeft: "0.375rem", verticalAlign: "middle", userSelect: "none" }}
+              >
+                <rect x="9" y="9" width="11" height="12" rx="2" />
+                <path d="M15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4" />
+              </svg>
+            </span>
           </div>
           {copyFeedback && (
             <p role={copyFeedback.type === "error" ? "alert" : "status"}>
