@@ -4,6 +4,8 @@ import { invoke } from "@forge/bridge";
 // Configuration page for the Workflow Migrator app
 function Configuration() {
   const [webTriggerUrl, setWebTriggerUrl] = useState("");
+  const [copyFeedback, setCopyFeedback] = useState(null);
+  const [isCopying, setIsCopying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -26,7 +28,32 @@ function Configuration() {
     loadConnections();
   }, []);
 
+  const handleCopyUrl = async (event) => {
+    // Preserve the familiar visual affordance of a link while overriding its
+    // navigation: the generated URL is copied instead of opening another page.
+    event.preventDefault();
+    if (isCopying || isLoading) return;
+
+    setCopyFeedback(null);
+    setIsCopying(true);
+    try {
+      // Le presse-papier doit être appelé directement depuis le clic utilisateur.
+      // L'iframe Forge ou le navigateur peut refuser cet accès : ne confirmer
+      // la copie qu'une fois l'écriture réellement terminée.
+      await navigator.clipboard.writeText(webTriggerUrl);
+      setCopyFeedback({ type: "success", message: "URL copiée dans le presse-papier !" });
+    } catch (err) {
+      setCopyFeedback({
+        type: "error",
+        message: "Impossible de copier l'URL. Veuillez la sélectionner et la copier manuellement.",
+      });
+    } finally {
+      setIsCopying(false);
+    }
+  };
+
   const handleGenerateUrl = async () => {
+    setCopyFeedback(null);
     setError(null);
     setIsLoading(true);
     try {
@@ -36,21 +63,6 @@ function Configuration() {
       setError(err.message || "Une erreur est survenue.");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleCopyUrl = async (event) => {
-    // The generated URL looks and behaves like a link, but clicking it copies
-    // the value instead of navigating away from the configuration page.
-    event.preventDefault();
-    setError(null);
-    setSuccess(null);
-
-    try {
-      await navigator.clipboard.writeText(webTriggerUrl);
-      setSuccess("URL copiée dans le presse-papier !");
-    } catch {
-      setError("Impossible de copier l'URL dans le presse-papier.");
     }
   };
 
@@ -151,11 +163,19 @@ function Configuration() {
             <a
               href={webTriggerUrl}
               onClick={handleCopyUrl}
-              title="Copier l’URL dans le presse-papier"
+              aria-label="Copier l'URL générée dans le presse-papier"
+              aria-disabled={isCopying || isLoading}
+              title="Cliquer pour copier l'URL"
+              style={{ overflowWrap: "anywhere", userSelect: "text" }}
             >
               {webTriggerUrl}
             </a>
           </div>
+          {copyFeedback && (
+            <p role={copyFeedback.type === "error" ? "alert" : "status"}>
+              {copyFeedback.message}
+            </p>
+          )}
         </div>
       )}
 

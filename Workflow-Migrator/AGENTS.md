@@ -72,9 +72,33 @@ Use the `--verbose` command to troubleshoot a failing command.
 
 # Deployments
 
-To deploy the app, use the command `deploy --non-interactive --e <environment-name>`
-Use the development environment unless the user has specified otherwise.
-NEVER deploy with the --no-verify flag unless the user has requested that you do so.
+Use the existing `Deploy.ps1` PowerShell script for this app's build/deployment workflow instead of manually chaining npm and Forge commands. Only deploy when the user has authorized it. Default to `development`; never deploy to staging or production without an explicit request.
+
+From the app root:
+
+```powershell
+.\Deploy.ps1 -DryRun                 # Read-only decision: no tests, build, cache write or deployment
+.\Deploy.ps1 -BuildOnly              # Test/build only when necessary; never deploy
+.\Deploy.ps1                         # Conditional frontend preparation, then deploy to development
+.\Deploy.ps1 -ForceBuild             # Force frontend tests/build, then deploy to development
+.\Deploy.ps1 -ForceBuild -BuildOnly  # Force frontend tests/build without deploying
+.\Deploy.ps1 -Environment staging    # Only if the user explicitly requested staging
+.\Deploy.Tests.ps1                   # Script regression tests with simulated npm/Forge commands
+```
+
+The script uses `$PSScriptRoot`, changes to the app root, checks `manifest.yml`, and prints `pwd` before invoking Forge. It currently targets Windows PowerShell/PowerShell on Windows (`npm.cmd`, `forge.cmd`). Prerequisites: Node.js, npm, installed root/frontend dependencies, and an authenticated Forge CLI for real deployment. It does not install dependencies automatically; on a fresh clone, run `npm.cmd ci` at the app root and `npm.cmd --prefix static/hello-world ci` before building.
+
+`Get-TreeFingerprint` hashes relative file paths and file contents with SHA-256, sorts entries ordinally, and hashes the combined entries. Frontend inputs include hidden files, package manifests/lockfile, Node.js version, and selected build environment variables (including `REACT_APP_*`). The frontend scan excludes directories named `node_modules`, `build`, `coverage`, `.git`, and `.forge`; links/reparse points are rejected. A separate fingerprint verifies generated build files.
+
+The local state is `.forge/frontend-build-state.json` (ignored by Git). A rebuild is required if forced, `build/index.html` is missing, the state is absent/unreadable, frontend inputs changed, or generated output changed. Backend-only changes do not require a frontend rebuild when both fingerprints still match. Do NOT replace this logic with `git diff`: committed frontend changes can still require rebuilding. The first script run rebuilds even when an older build is present, because it has no trusted fingerprint yet.
+
+When rebuilding, the script invalidates the old marker, runs frontend tests with `CI=true` and `--watchAll=false --runInBand`, then runs `npm run build`. It verifies sources did not change during the build and only saves fingerprints after success. Failures stop before deployment. `CI` and the working directory are restored in `finally`. `BUILD_PATH` overrides are rejected because the manifest expects `static/hello-world/build`.
+
+Deployment uses `forge deploy --non-interactive --environment <name>`, retaining Forge's default lint/verification; a separate lint immediately before deployment is normally redundant. Run standalone `forge lint` when validating manifest changes without deploying. NEVER use `--no-verify` unless the user explicitly requests it. The previously documented `--e` option is invalid for the installed CLI; use `--environment`.
+
+The script does not commit, push, install or upgrade Jira installations, or manage Forge variables. Scope/egress changes may still require a separately authorized installation upgrade after deployment. Never claim success until the command has completed successfully. Prefer one script invocation and its final result over repeatedly polling each build stage.
+
+Keep `node_modules/`, `static/hello-world/build/`, and `.forge/` untracked. Keep source files, deployment scripts/tests, `manifest.yml`, `package.json` and `package-lock.json` tracked. The fingerprints are a local build-reuse optimization, not a security signature or proof of fully reproducible dependencies; use `-ForceBuild` after manually altering installed dependencies or build tooling not represented in the inputs.
 
 # Installation
 

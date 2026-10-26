@@ -1,0 +1,127 @@
+import React, { act } from "react";
+import { createRoot } from "react-dom/client";
+import { Simulate } from "react-dom/test-utils";
+import { invoke } from "@forge/bridge";
+import Configuration from "./Configuration";
+
+jest.mock("@forge/bridge", () => ({ invoke: jest.fn() }));
+
+const generatedUrl = "https://example.atlassian-dev.net/webtrigger/test?token=a%2Bb";
+const copyLabel = "Copier l'URL générée dans le presse-papier";
+let container;
+let root;
+let originalClipboard;
+
+function copyLink() {
+  return container.querySelector(`a[aria-label="${copyLabel}"]`);
+}
+
+async function click(element) {
+  await act(async () => {
+    Simulate.click(element);
+  });
+}
+
+async function generateUrl() {
+  const button = Array.from(container.querySelectorAll("button"))
+    .find(element => element.textContent === "Générer URL");
+  await click(button);
+}
+
+beforeEach(async () => {
+  global.IS_REACT_ACT_ENVIRONMENT = true;
+  originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: jest.fn().mockResolvedValue(undefined) },
+  });
+  invoke.mockReset();
+  invoke.mockImplementation(async (name) => {
+    if (name === "getAllConnections") return [];
+    if (name === "generateMyWebTriggerUrl") return generatedUrl;
+    throw new Error(`Unexpected resolver: ${name}`);
+  });
+  container = document.createElement("div");
+  document.body.appendChild(container);
+  root = createRoot(container);
+  await act(async () => {
+    root.render(<Configuration />);
+  });
+});
+
+afterEach(() => {
+  act(() => root.unmount());
+  container.remove();
+  if (originalClipboard) {
+    Object.defineProperty(navigator, "clipboard", originalClipboard);
+  } else {
+    delete navigator.clipboard;
+  }
+  delete global.IS_REACT_ACT_ENVIRONMENT;
+});
+
+test("shows the generated URL as a copyable link", async () => {
+  expect(copyLink()).toBeNull();
+  await generateUrl();
+  expect(copyLink().textContent).toBe(generatedUrl);
+  expect(copyLink().getAttribute("href")).toBe(generatedUrl);
+  expect(copyLink().getAttribute("aria-disabled")).toBe("false");
+  expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
+});
+
+test("copies the exact generated URL and announces success", async () => {
+  await generateUrl();
+  await click(copyLink());
+  expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(1);
+  expect(navigator.clipboard.writeText).toHaveBeenCalledWith(generatedUrl);
+  expect(container.querySelector('[role="status"]').textContent)
+    .toBe("URL copiée dans le presse-papier !");
+  expect(copyLink().getAttribute("aria-disabled")).toBe("false");
+});
+
+test("waits for the clipboard write before confirming success", async () => {
+  let finishCopy;
+  navigator.clipboard.writeText.mockImplementation(() => new Promise(resolve => {
+    finishCopy = resolve;
+  }));
+  await generateUrl();
+  await click(copyLink());
+  expect(copyLink().getAttribute("aria-disabled")).toBe("true");
+  expect(container.querySelector('[role="status"]')).toBeNull();
+  await act(async () => finishCopy());
+  expect(copyLink().getAttribute("aria-disabled")).toBe("false");
+  expect(container.querySelector('[role="status"]')).not.toBeNull();
+});
+
+test("reports a clipboard refusal and allows retrying", async () => {
+  navigator.clipboard.writeText.mockRejectedValueOnce(new Error("NotAllowedError"));
+  await generateUrl();
+  await click(copyLink());
+  expect(container.querySelector('[role="alert"]').textContent)
+    .toContain("copier manuellement");
+  expect(container.querySelector('[role="status"]')).toBeNull();
+  expect(copyLink().getAttribute("aria-disabled")).toBe("false");
+  await click(copyLink());
+  expect(container.querySelector('[role="alert"]')).toBeNull();
+  expect(container.querySelector('[role="status"]')).not.toBeNull();
+});
+
+test("handles browsers without the Clipboard API", async () => {
+  delete navigator.clipboard;
+  await generateUrl();
+  await click(copyLink());
+  expect(container.querySelector('[role="alert"]').textContent)
+    .toContain("Impossible de copier l'URL");
+  expect(copyLink().getAttribute("aria-disabled")).toBe("false");
+});
+
+test("clears old feedback and copies the new URL after regeneration", async () => {
+  await generateUrl();
+  await click(copyLink());
+  const nextUrl = "https://example.atlassian-dev.net/webtrigger/next";
+  invoke.mockResolvedValueOnce(nextUrl);
+  await generateUrl();
+  expect(container.querySelector('[role="status"]')).toBeNull();
+  await click(copyLink());
+  expect(navigator.clipboard.writeText).toHaveBeenLastCalledWith(nextUrl);
+});
