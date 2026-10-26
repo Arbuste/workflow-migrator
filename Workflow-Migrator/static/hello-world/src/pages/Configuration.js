@@ -39,6 +39,21 @@ function Configuration() {
     }
   };
 
+  const handleCopyUrl = async (event) => {
+    // The generated URL looks and behaves like a link, but clicking it copies
+    // the value instead of navigating away from the configuration page.
+    event.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await navigator.clipboard.writeText(webTriggerUrl);
+      setSuccess("URL copiée dans le presse-papier !");
+    } catch {
+      setError("Impossible de copier l'URL dans le presse-papier.");
+    }
+  };
+
   const handleAddConnectionClick = () => {
     setError(null);
     setSuccess(null);
@@ -133,7 +148,11 @@ function Configuration() {
         <div style={{ marginTop: "1rem" }}>
           <strong>URL générée :</strong>
           <div>
-            <a href={webTriggerUrl} target="_blank" rel="noopener noreferrer">
+            <a
+              href={webTriggerUrl}
+              onClick={handleCopyUrl}
+              title="Copier l’URL dans le presse-papier"
+            >
               {webTriggerUrl}
             </a>
           </div>
