@@ -35,6 +35,7 @@ jobs:
         run: |
           npm install -g @forge/cli
           forge --version
+          forge settings set usage-analytics false
 
       - name: Install root dependencies
         run: npm ci
