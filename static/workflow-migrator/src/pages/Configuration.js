@@ -243,7 +243,11 @@ function Configuration() {
       )}
 
       <div style={{ marginTop: "1.5rem" }}>
-        <button type="button" onClick={handleAddConnectionClick}>
+        <button
+          type="button"
+          onClick={handleAddConnectionClick}
+          style={{ backgroundColor: "red" }}
+        >
           Ajouter une connexion
         </button>
       </div>
