@@ -32,10 +32,7 @@ jobs:
             static/workflow-migrator/package-lock.json
 
       - name: Install Forge CLI
-        run: |
-          npm install -g @forge/cli
-          forge --version
-          forge settings set usage-analytics false
+        run: npm install -g @forge/cli
 
       - name: Install root dependencies
         run: npm ci
