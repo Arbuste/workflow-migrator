@@ -60,6 +60,14 @@ afterEach(() => {
   delete global.IS_REACT_ACT_ENVIRONMENT;
 });
 
+test("displays the add connection button with a red background", () => {
+  const button = Array.from(container.querySelectorAll("button"))
+    .find(element => element.textContent === "Ajouter une connexion");
+
+  expect(button).toBeDefined();
+  expect(button.style.backgroundColor).toBe("rgb(222, 53, 11)");
+});
+
 test("shows generated URL as link-styled text without a button or navigation", async () => {
   expect(copyText()).toBeNull();
   await generateUrl();
