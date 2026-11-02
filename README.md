@@ -2,21 +2,22 @@
 
 Workflow Migrator synchronise les workflows et les champs personnalisés entre deux sites Jira.
 
+L’interface d’administration utilise le rendu natif Standard UI Kit de Forge. Elle ne nécessite aucun build Custom UI séparé.
+
 ## Installation des dépendances
 
 ```sh
 npm install
-npm --prefix static/workflow-migrator install
 ```
 
-## Tests et build du frontend
+## Tests et validation
 
 ```sh
-npm --prefix static/workflow-migrator test -- --watchAll=false --runInBand
-npm --prefix static/workflow-migrator run build
+npm test
+forge lint
 ```
 
-Sous Windows, le script de déploiement peut préparer le frontend sans effectuer de déploiement :
+Sous Windows, le script de déploiement peut valider l’application sans effectuer de déploiement :
 
 ```powershell
 .\Deploy.ps1 -BuildOnly

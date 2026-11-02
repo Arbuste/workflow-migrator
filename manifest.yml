@@ -4,6 +4,7 @@ modules:
       resource: main
       resolver:
         function: resolver
+      render: native
       title: Workflow Migrator
       pages:
         - key: workflow-migrator-configuration
@@ -47,7 +48,7 @@ modules:
       timeoutSeconds: 300
 resources:
   - key: main
-    path: static/workflow-migrator/build
+    path: src/frontend/index.jsx
 permissions:
   scopes:
     - manage:jira-configuration
