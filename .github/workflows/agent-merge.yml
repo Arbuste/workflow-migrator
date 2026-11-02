@@ -26,7 +26,7 @@ jobs:
             --title "$BRANCH" --body "PR créée automatiquement"
 
       - name: Fusionner (squash)
-        run: gh pr merge "$BRANCH" --squash --delete-branch
+        run: gh pr merge "$BRANCH" --squash
 
       - name: Lancer le déploiement
-        run: gh workflow run deploy-development.yml --ref development
+        run: gh workflow run deploy-development.yml --ref developmentx
