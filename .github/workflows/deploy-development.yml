@@ -25,16 +25,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: |
             package-lock.json
             static/workflow-migrator/package-lock.json
 
       - name: Install Forge CLI
-        run: |
-          npm install -g @forge/cli
-          forge --version
+        run: npm install -g @forge/cli
 
       - name: Install root dependencies
         run: npm ci
