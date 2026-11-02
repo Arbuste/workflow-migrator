@@ -3,7 +3,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $fixture = Join-Path $PSScriptRoot ('tmp_rovodev_deploy_' + [guid]::NewGuid().ToString('N'))
-$frontend = Join-Path $fixture 'static/hello-world'
+$frontend = Join-Path $fixture 'static/workflow-migrator'
 $global:tmp_rovodev_deployTest = @{
     calls = (New-Object 'System.Collections.Generic.List[string]')
     failTest = $false; failBuild = $false; failDeploy = $false; frontend = $frontend
