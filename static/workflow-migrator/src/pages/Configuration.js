@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { invoke } from "@forge/bridge";
 
-// Configuration page for the Workflow Migrator app
 function Configuration() {
   const [webTriggerUrl, setWebTriggerUrl] = useState("");
   const [copyFeedback, setCopyFeedback] = useState(null);
@@ -36,7 +35,7 @@ function Configuration() {
     setIsCopying(true);
     try {
       // Le presse-papier doit être appelé directement depuis le clic utilisateur.
-      // L'iframe Forge ou le navigateur peut refuser cet accès : ne confirmer
+      // Le contexte intégré ou le navigateur peut refuser cet accès : ne confirmer
       // la copie qu'une fois l'écriture réellement terminée.
       await navigator.clipboard.writeText(webTriggerUrl);
       setCopyFeedback({ type: "success", message: "URL copiée dans le presse-papier !" });
@@ -145,7 +144,6 @@ function Configuration() {
   return (
     <div>
       <h2>Configuration</h2>
-      <p>This is the configuration page for the Workflow Migrator app.</p>
       <button type="button" onClick={handleGenerateUrl} disabled={isLoading}>
         {isLoading ? "Génération en cours..." : "Générer URL"}
       </button>

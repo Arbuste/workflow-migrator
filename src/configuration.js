@@ -1,10 +1,9 @@
 import { webTrigger } from '@forge/api';
 import { kvs, WhereConditions} from '@forge/kvs';
 
-// Fonction appelée par votre UI (Custom UI ou UI Kit) sur la page admin
 export async function generateMyWebTriggerUrl() {
   try {
-    // 'receive-sync-webhook' doit correspondre exactement à la 'key' dans votre manifest.yml
+    // La clé relie cette URL au webtrigger de réception déclaré dans le manifeste.
     const url = await webTrigger.getUrl('receive-sync-webhook');
     console.log("URL générée avec succès pour ce site");
     return url; 
@@ -14,7 +13,6 @@ export async function generateMyWebTriggerUrl() {
   }
 }
 
-// Fonction appelée quand l'admin du Site A valide le formulaire de connexion
 export async function saveConnection({ payload }) {
   const { siteName, webTriggerUrl } = payload;
   console.log(siteName);
@@ -25,7 +23,6 @@ export async function saveConnection({ payload }) {
   const storageKey = `connection-${siteName}`;
 
   try {
-    // 2. Utilisation de kvs.set() à la place de storage.setSecret()
     await kvs.set(storageKey, webTriggerUrl);
     return { success: true };
   } catch (error) {
@@ -34,7 +31,6 @@ export async function saveConnection({ payload }) {
   }
 }
 
-// Fonction appelée quand l'admin du Site A valide le formulaire de connexion
 export async function activateConnection ({ payload }) {
 
     const { siteName } = payload;
@@ -45,7 +41,6 @@ export async function activateConnection ({ payload }) {
     const storageKey = `connection-${siteName}`;
 
     try {
-        // 2. Utilisation de kvs.set() à la place de storage.setSecret()
         await kvs.set('active-connection', storageKey);
         return { success: true };
     } catch (error) {
@@ -56,15 +51,14 @@ export async function activateConnection ({ payload }) {
 
 export async function getAllConnections() {
   try {
-    // On demande à KVS toutes les clés qui commencent par "connection:"
+    // Charge uniquement les connexions enregistrées par l'application.
     const { results } = await kvs.query()
       .where('key', WhereConditions.beginsWith('connection-'))
       .getMany();
 
     const activeSiteName = await kvs.get('active-connection');
 
-    // 'results' est un tableau d'objets contenant { key, value }
-    // On le transforme pour l'adapter au format attendu par le front
+    // N'expose que le nom et l'état actif nécessaires à l'interface.
     return results.map(item => {
         const result = { siteName: item.key.replace('connection-', '') };
         if (item.key === activeSiteName) {
