@@ -1,0 +1,32 @@
+name: Agent auto-merge
+
+on:
+  push:
+    branches:
+      - 'agent/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BRANCH: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Créer la PR si elle n'existe pas
+        run: |
+          gh pr view "$BRANCH" >/dev/null 2>&1 || \
+          gh pr create --base development --head "$BRANCH" \
+            --title "$BRANCH" --body "PR créée automatiquement"
+
+      - name: Fusionner (squash)
+        run: gh pr merge "$BRANCH" --squash
+
+      - name: Lancer le déploiement
+        run: gh workflow run deploy-development.yml --ref developmentx

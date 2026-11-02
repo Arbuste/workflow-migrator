@@ -1,12 +1,11 @@
-
 name: Deploy Forge (development)
 
 on:
   push:
     branches:
       - development
+  workflow_dispatch:
 
-# Évite deux déploiements simultanés sur le même environnement
 concurrency:
   group: forge-deploy-development
   cancel-in-progress: false
@@ -14,6 +13,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: development
     env:
       FORGE_EMAIL: ${{ secrets.FORGE_EMAIL }}
       FORGE_API_TOKEN: ${{ secrets.FORGE_API_TOKEN }}
@@ -32,13 +32,15 @@ jobs:
             static/hello-world/package-lock.json
 
       - name: Install Forge CLI
-        run: npm install -g @forge/cli
+        run: |
+          npm install -g @forge/cli
+          forge --version
 
       - name: Install root dependencies
         run: npm ci
 
       - name: Install & build front app
-        working-directory: static/hello-world
+        working-directory: static/hello-world   # adapte à ton chemin
         run: |
           npm ci
           npm run build
