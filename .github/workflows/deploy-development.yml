@@ -29,7 +29,7 @@ jobs:
           cache: npm
           cache-dependency-path: |
             package-lock.json
-            static/hello-world/package-lock.json
+            static/workflow-migrator/package-lock.json
 
       - name: Install Forge CLI
         run: |
@@ -40,7 +40,7 @@ jobs:
         run: npm ci
 
       - name: Install & build front app
-        working-directory: static/hello-world   # adapte à ton chemin
+        working-directory: static/workflow-migrator
         run: |
           npm ci
           npm run build
