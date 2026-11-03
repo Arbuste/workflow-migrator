@@ -246,7 +246,7 @@ function Configuration() {
         <button
           type="button"
           onClick={handleAddConnectionClick}
-          style={{ backgroundColor: "green" }}
+          style={{ backgroundColor: "blue" }}
         >
           Ajouter une connexion
         </button>
