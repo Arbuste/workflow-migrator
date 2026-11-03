@@ -60,12 +60,12 @@ afterEach(() => {
   delete global.IS_REACT_ACT_ENVIRONMENT;
 });
 
-test("shows the add connection button with a red background", () => {
+test("shows the add connection button with a green background", () => {
   const button = Array.from(container.querySelectorAll("button"))
     .find(element => element.textContent === "Ajouter une connexion");
 
   expect(button).toBeDefined();
-  expect(button.style.backgroundColor).toBe("red");
+  expect(button.style.backgroundColor).toBe("green");
 });
 
 test("shows generated URL as link-styled text without a button or navigation", async () => {
